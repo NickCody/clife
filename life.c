@@ -2,14 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #define ALIVE '0'
-#define DEAD '.'
+#define DEAD ' '
 #define OUTSIDE 'x'
 
-#define NUM_ROWS 10
-#define NUM_COLS 10
-#define NUM_GENERATIONS 100
+#define NUM_ROWS 40
+#define NUM_COLS 40
+#define NUM_GENERATIONS 10000
 #define MAX_MESSAGE_LENGTH 256
 
 #define clear() printf("\033[H\033[J")
@@ -43,6 +44,7 @@ char cell_next(char** board, int row, int col);
 int num_neighbors(char** board, int row, int col);
 void read_file(char* filename, char** board);
 int compare_boards(char** a, char** b);
+void randomize_board(char** board);
 
 int main(int argc, char** argv) {
 
@@ -55,7 +57,8 @@ int main(int argc, char** argv) {
     }
 
     char** currentGen=allBoards[0];
-    read_file("initial.txt", currentGen);
+    //read_file("initial.txt", currentGen);
+    randomize_board(currentGen);
     print_board(currentGen, "Initial generation");
 
     // Start at 1, since 0 was set speciallt
@@ -64,6 +67,7 @@ int main(int argc, char** argv) {
         calc_generation(currentGen, allBoards[i]);
 
         clear();
+
         sprintf(message, "Generation %d", i);
         print_board(allBoards[i], message);
 
@@ -80,7 +84,7 @@ int main(int argc, char** argv) {
             break;
         }
 
-        sleep(1);
+        usleep(50000);
     }
 
     // Free all boards
@@ -272,3 +276,13 @@ void read_file(char* filename, char** board) {
 
     fclose(h);
 }
+
+void randomize_board(char** board) {
+    srand (time(NULL));
+    for(int i = 0; i < NUM_ROWS; i++) {
+        for (int j = 0; j < NUM_COLS; j++) {
+            board[i][j] = rand() % 2 == 0 ? ALIVE : DEAD;
+        }
+    }
+}
+

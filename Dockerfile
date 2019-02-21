@@ -8,7 +8,9 @@ RUN groupadd -g 1001 nic && \
     yum install -y tar unzip iputils \
     yum install gdb \
     yum install gcc \
-    yum install make
+    yum install make \
+    yum install sendmail \
+    yum install mailx
 
 WORKDIR /home/nic
 
