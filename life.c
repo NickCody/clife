@@ -4,123 +4,104 @@
 #include <unistd.h>
 #include <time.h>
 
-#define ALIVE '0'
-#define DEAD ' '
-#define OUTSIDE 'x'
+#define ALIVE 'X'
+#define DEAD '.'
+#define OUTSIDE '-'
 
-#define NUM_ROWS 40
-#define NUM_COLS 40
-#define NUM_GENERATIONS 10000
-#define MAX_MESSAGE_LENGTH 256
-
-#define clear() printf("\033[H\033[J")
+#define NUM_ROWS 5
+#define NUM_COLS 5
+#define MAX_GENERATIONS 1000
 
 // Board Structure
 //
-// char* = column (array of cells, aka column)
+// char* = column (array of cells, array of char)
 // char** array of columns (array of columns, aka board)
-// char*** array of rows (array of boards)
 //
 // first index = row
 // second index = col
-// board[0] = [xxxxxxxx]
-// board[1] = [xxxxxxxx]
-// ..
-// board[n] = [xxxxxxxx]
-//
+// board[0] = row 0
+// board[0][0] = cell(0,0)
 
-char** create_board();
-void free_board(char** board);
+// Board Allocation/Deallocation
+char** allocate_board ();
+void   free_board     (char** board);
 
-// Operations on boards
-void set_cell(char** board, char setchar, int row, int col);
-void clear_board(char** board, char clearchar);
-void print_board(char** board, char* message);
-void calc_generation(char** nextGen, char** currentGen);
-void copy_board(char** src, char** dest);
-void invert_board(char** board);
-int check_board(char** board);
-char cell_next(char** board, int row, int col);
-int num_neighbors(char** board, int row, int col);
-void read_file(char* filename, char** board);
-int compare_boards(char** a, char** b);
-void randomize_board(char** board);
+// Board Operations
+void   clear_board     (char** board, char clearchar);
+void   print_board     (char** board);
+void   copy_board      (char** src, char** dest);
+void   invert_board    (char** board);
+int    check_board     (char** board);
+void   read_file       (char* filename, char** board);
+int    compare_boards  (char** a, char** b);
+void   randomize_board (char** board);
+void   set_cell        (char** board, char setchar, int row, int col);
+char   get_cell        (char** board, int row, int col);
+
+// Game of life functions
+char   cell_next            (char** board, int row, int col);
+int    num_neighbors        (char** board, int row, int col);
+void   calc_next_generation (char** nextGen, char** currentGen);
 
 int main(int argc, char** argv) {
 
-    char message[MAX_MESSAGE_LENGTH];
-
     // Create all boards we need
-    char*** allBoards = (char***)malloc(NUM_GENERATIONS * sizeof(char**));
-    for (int b=0; b < NUM_GENERATIONS; b++) {
-        allBoards[b] = create_board();
-    }
+    char** board1 = allocate_board();
+    char** board2 = allocate_board();
 
-    char** currentGen=allBoards[0];
+    // pointers to boards so I can flip between which one is current/next
+    char** currentGen=board1;
+    char** nextGen=board2;
+    
+    // no file reading for now
     //read_file("initial.txt", currentGen);
+
     randomize_board(currentGen);
-    print_board(currentGen, "Initial generation");
 
-    // Start at 1, since 0 was set speciallt
-    for (int i=1; i < NUM_GENERATIONS; i++ ) {
+    printf("Initial generation\n");
+    print_board(currentGen);
 
-        calc_generation(currentGen, allBoards[i]);
+    for (int i=1; i <= MAX_GENERATIONS; i++ ) {
 
-        clear();
+        calc_next_generation(currentGen, nextGen);
 
-        sprintf(message, "Generation %d", i);
-        print_board(allBoards[i], message);
+        printf("Generation %d\n", i);
+        print_board(nextGen);
 
-        if (compare_boards(currentGen, allBoards[i]) == 0) {
+        if (compare_boards(currentGen, nextGen) == 0) {
             printf("Next generation identical, aborting!\n");
-            exit(0);
+            break;
         }
 
-        // Make the new board currentGen
-        currentGen = allBoards[i];
-
-        if (!check_board(currentGen)) {
+        if (!check_board(nextGen)) {
             printf("All dead, aborting!\n");
             break;
         }
 
-        usleep(50000);
+        // Standard 3-statement swap of boards using temp variable
+        char** tempGen = currentGen;
+        currentGen = nextGen;
+        nextGen = tempGen;
     }
 
-    // Free all boards
-    for (int b=0; b < NUM_GENERATIONS; b++) {
-        free_board(allBoards[b]);
-    }
+    free_board(board1);
+    free_board(board2);
 
     return 0;
 }
 
-char** create_board() {
-    char** board = (char**)malloc(NUM_ROWS * sizeof(char*)); // size of char* (array)
+//
+// Board Allocation/Deallocation
+//
+char** allocate_board() {
+    char** board = (char**)malloc(NUM_ROWS * sizeof(char*));
     for(int i = 0; i < NUM_ROWS; i++) {
-        board[i] = (char*)malloc(NUM_COLS * sizeof(char)); // size of single char
+        board[i] = (char*)malloc(NUM_COLS * sizeof(char));
     }
 
     clear_board(board, DEAD);
 
     return board;
-}
-
-void set_cell(char** board, char setchar, int row, int col) {
-    if (row < 0 || row >= NUM_ROWS || col < 0 || col > NUM_COLS) {
-        printf("Error: invalid coordinate specified (%d,%d)", row, col);
-        exit(1);
-    }
-
-    board[row][col] = setchar;
-}
-
-void clear_board(char** board, char clearchar) {
-    for(int i = 0; i < NUM_ROWS; i++) {
-        for (int j = 0; j < NUM_COLS; j++) {
-            board[i][j] = clearchar;
-        }
-    }
 }
 
 void free_board(char** board) {
@@ -131,8 +112,18 @@ void free_board(char** board) {
     free (board);
 }
 
-void print_board(char** board, char* message) {
-    printf("%s (%dx%d)\n", message, NUM_ROWS, NUM_COLS);
+//
+// Board Operations
+//
+void clear_board(char** board, char clearchar) {
+    for(int i = 0; i < NUM_ROWS; i++) {
+        for (int j = 0; j < NUM_COLS; j++) {
+            board[i][j] = clearchar;
+        }
+    }
+}
+
+void print_board(char** board) {
     for(int i = 0; i < NUM_ROWS; i++) {
         for (int j = 0; j < NUM_COLS; j++) {
             printf("%c ", board[i][j]);
@@ -171,13 +162,82 @@ int check_board(char** board) {
     return 0;
 }
 
+int compare_boards(char** a, char** b) {
+    for(int i = 0; i < NUM_ROWS; i++) {
+        for (int j = 0; j < NUM_COLS; j++) {
+            if (a[i][j] != b[i][j])
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
+void randomize_board(char** board) {
+    srand (time(NULL));
+    for(int i = 0; i < NUM_ROWS; i++) {
+        for (int j = 0; j < NUM_COLS; j++) {
+            board[i][j] = rand() % 2 == 0 ? ALIVE : DEAD;
+        }
+    }
+}
+
+void read_file(char* filename, char** board) {
+    int BUF_LEN = 1000;
+    char* buf = malloc(BUF_LEN);
+
+    FILE* h = fopen(filename, "r");
+
+    if (!h) {
+        printf("Error, bad file. Aborting.");
+        exit(1);
+    }
+
+    int row = 0;
+    fgets(buf, BUF_LEN, h);
+    while (!feof(h)) {
+
+        if (buf[NUM_COLS] == '\n')
+            buf[NUM_COLS] = '\0';
+
+        if (strlen(buf) > NUM_COLS) {
+            printf("%s has %d columns (max %d)\n", filename, (int)strlen(buf), NUM_COLS);
+            exit(1);
+        }
+
+        for (int j=0; j < NUM_COLS; j++)
+            board[row][j] = buf[j];
+
+        row++;
+        fgets(buf, BUF_LEN, h);
+    }
+
+    if (row != NUM_ROWS) {
+        printf("%s has %d rows (must be %d)\n", filename, row, NUM_ROWS);
+        exit(1);
+    }
+
+    fclose(h);
+}
+
+void set_cell(char** board, char setchar, int row, int col) {
+    if (row < 0 || row >= NUM_ROWS || col < 0 || col > NUM_COLS) {
+        printf("Error: invalid coordinate specified (%d,%d)", row, col);
+        exit(1);
+    }
+
+    board[row][col] = setchar;
+}
+
 char get_cell(char** board, int row, int col) {
     if (row < 0 || row >= NUM_ROWS || col < 0 || col >= NUM_COLS)
-        return OUTSIDE;
+        return DEAD;
     else
         return board[row][col];
 }
 
+//
+// Game of Life Logic
 int num_neighbors(char** board, int row, int col) {
     int count = 0;
 
@@ -220,69 +280,10 @@ char cell_next(char** board, int row, int col) {
     return OUTSIDE;
 }
 
-void calc_generation(char** currentGen, char** nextGen) {
+void calc_next_generation(char** currentGen, char** nextGen) {
     for(int i = 0; i < NUM_ROWS; i++) {
         for (int j = 0; j < NUM_COLS; j++) {
             nextGen[i][j] = cell_next(currentGen, i, j);
         }
     }
 }
-
-int compare_boards(char** a, char** b) {
-    for(int i = 0; i < NUM_ROWS; i++) {
-        for (int j = 0; j < NUM_COLS; j++) {
-            if (a[i][j] != b[i][j])
-                return 1;
-        }
-    }
-
-    return 0;
-}
-
-void read_file(char* filename, char** board) {
-    int BUF_LEN = 1000;
-    char* buf = malloc(BUF_LEN);
-
-    FILE* h = fopen(filename, "r");
-
-    if (!h) {
-        printf("Error, bad file. Aborting.");
-        exit(1);
-    }
-
-    int row = 0;
-    fgets(buf, BUF_LEN, h);
-    while (!feof(h)) {
-
-        if (buf[NUM_COLS] == '\n')
-            buf[NUM_COLS] = '\0';
-
-        if (strlen(buf) > NUM_COLS) {
-            printf("%s has %d columns (max %d)\n", filename, (int)strlen(buf), NUM_COLS);
-            exit(1);
-        }
-
-        for (int j=0; j < NUM_COLS; j++)
-            board[row][j] = buf[j];
-
-        row++;
-        fgets(buf, BUF_LEN, h);
-    }
-
-    if (row != NUM_ROWS) {
-        printf("%s has %d rows (must be %d)\n", filename, row, NUM_ROWS);
-        exit(1);
-    }
-
-    fclose(h);
-}
-
-void randomize_board(char** board) {
-    srand (time(NULL));
-    for(int i = 0; i < NUM_ROWS; i++) {
-        for (int j = 0; j < NUM_COLS; j++) {
-            board[i][j] = rand() % 2 == 0 ? ALIVE : DEAD;
-        }
-    }
-}
-
