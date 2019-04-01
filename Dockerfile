@@ -12,12 +12,10 @@ RUN groupadd -g 1001 nic && \
     yum install sendmail \
     yum install mailx
 
-WORKDIR /home/nic
-
-# When images extend this one, they can use 'USER root' command again
-# to allow for modifications that need privileges during build
-# but they should always set back the USER to 500 just as a preferred practice
-# (ideally they can run as any UID, also they should set the permissions on files to solidfy it as ready only for things that should not change)
 USER 500
 
+RUN mkdir -p /home/nic/life
+WORKDIR /home/nic/life
+ADD src ./
+RUN make
 
