@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <getopt.h>
 
 #define ALIVE 'X'
 #define DEAD '.'
@@ -79,7 +80,7 @@ void process_cli(int argc, char** argv) {
                 strcpy(FILENAME, optarg);
                 break;
             case '?':
-                printf("unknown option: %c\n", optopt);
+                printf("unknown option: %c\n", opt);
                 break;
         }
     }

@@ -17,5 +17,6 @@ USER 500
 RUN mkdir -p /home/nic/life
 WORKDIR /home/nic/life
 ADD src ./
-RUN make
+RUN make clean && \
+    make
 
