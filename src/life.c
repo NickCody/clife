@@ -13,6 +13,9 @@ int NUM_COLS=5;
 int MAX_GENERATIONS=1000;
 char FILENAME[4096];
 
+void process_cli(int argc, char** argv);
+void play();
+
 // Board Structure
 //
 // char* = column (array of cells, array of char)
@@ -45,6 +48,17 @@ int    num_neighbors        (char** board, int row, int col);
 void   calc_next_generation (char** nextGen, char** currentGen);
 
 int main(int argc, char** argv) {
+    process_cli(argc, argv);
+
+    play();
+
+    return 0;
+}
+
+//
+//
+//
+void process_cli(int argc, char** argv) {
     int opt;
     strcpy(FILENAME, "");
 
@@ -70,6 +84,12 @@ int main(int argc, char** argv) {
         }
     }
 
+}
+
+//
+// play
+//
+void play() {
     // Create all boards we need
     char** board1 = allocate_board();
     char** board2 = allocate_board();
@@ -77,7 +97,7 @@ int main(int argc, char** argv) {
     // pointers to boards so I can flip between which one is current/next
     char** currentGen=board1;
     char** nextGen=board2;
-    
+
     // no file reading for now
     if (strlen(FILENAME) > 0)
         read_file(FILENAME, currentGen);
@@ -112,8 +132,6 @@ int main(int argc, char** argv) {
 
     free_board(board1);
     free_board(board2);
-
-    return 0;
 }
 
 //
