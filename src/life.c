@@ -8,9 +8,10 @@
 #define DEAD '.'
 #define OUTSIDE '-'
 
-#define NUM_ROWS 5
-#define NUM_COLS 5
-#define MAX_GENERATIONS 1000
+int NUM_ROWS=5;
+int NUM_COLS=5;
+int MAX_GENERATIONS=1000;
+char FILENAME[4096];
 
 // Board Structure
 //
@@ -44,6 +45,30 @@ int    num_neighbors        (char** board, int row, int col);
 void   calc_next_generation (char** nextGen, char** currentGen);
 
 int main(int argc, char** argv) {
+    int opt;
+    strcpy(FILENAME, "");
+
+    while((opt = getopt(argc, argv, "c:r:g:f:")) != -1)
+    {
+        switch(opt)
+        {
+            case 'c':
+                NUM_COLS = atoi(optarg);
+                break;
+            case 'r':
+                NUM_ROWS = atoi(optarg);
+                break;
+            case 'g':
+                MAX_GENERATIONS = atoi(optarg);
+                break;
+            case 'f':
+                strcpy(FILENAME, optarg);
+                break;
+            case '?':
+                printf("unknown option: %c\n", optopt);
+                break;
+        }
+    }
 
     // Create all boards we need
     char** board1 = allocate_board();
@@ -54,9 +79,10 @@ int main(int argc, char** argv) {
     char** nextGen=board2;
     
     // no file reading for now
-    //read_file("initial.txt", currentGen);
-
-    randomize_board(currentGen);
+    if (strlen(FILENAME) > 0)
+        read_file(FILENAME, currentGen);
+    else
+        randomize_board(currentGen);
 
     printf("Initial generation\n");
     print_board(currentGen);
