@@ -4,7 +4,6 @@ FROM mcr.microsoft.com/vscode/devcontainers/cpp:0-${VARIANT}
 
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
 
-
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
         apt-transport-https \
