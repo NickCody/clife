@@ -3,3 +3,7 @@ a.out
 .idea/
 life.dSYM/
 
+bazel-bin
+bazel-clife
+bazel-out
+bazel-testlogs
