@@ -32,7 +32,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "bazel clean",
+	// "postCreateCommand": "bazel clean",
 
 	// Comment out this line to run as root instead.
 	"remoteUser": "vscode"
